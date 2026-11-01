@@ -1,127 +1,89 @@
-# VoxNote
+<div align="center">
 
-> Voice-to-text note-taking app with transcription, organization, and search capabilities.
+<img src="https://capsule-render.vercel.app/api?type=waving&color=0:05070D,50:0B3B45,100:00B8C4&height=170&section=header&text=VoxNote&fontSize=50&fontColor=E9F0F7&fontAlignY=40&desc=Speak.%20It%20writes.&descAlignY=60&descSize=16" width="100%" alt="VoxNote" />
 
-[![CI](https://github.com/Ankitavasudev/VoxNote/actions/workflows/ci.yml/badge.svg)](https://github.com/Ankitavasudev/VoxNote/actions)
-[![React 18](https://img.shields.io/badge/react-18-61DAFB.svg)](https://reactjs.org)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://python.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+**A voice-notes app that runs entirely in your browser — no account, no server, no upload.**
 
-## Features
+<br />
 
-- **Voice Recording** - High-quality audio capture with noise reduction
-- **AI Transcription** - Accurate speech-to-text conversion
-- **Smart Organization** - Auto-categorize notes by topic
-- **Full-text Search** - Search within transcriptions
-- **Tags & Folders** - Hierarchical organization
-- **Export** - Markdown, PDF, plain text export
-- **Offline Mode** - Local storage with sync capability
-- **Keyboard Shortcuts** - Power user shortcuts
+<a href="https://ankitavasudev.github.io/VoxNote/"><img src="https://img.shields.io/badge/%E2%96%B6%20LIVE%20DEMO-00B8C4?style=for-the-badge&logoColor=white" alt="Live demo" /></a>
+&nbsp;
+<img src="https://img.shields.io/badge/tests-14%20passing-3FB950?style=for-the-badge" alt="Tests" />
+&nbsp;
+<img src="https://img.shields.io/badge/storage-localStorage-0D1117?style=for-the-badge" alt="Storage" />
 
-## Demo
+<br /><br />
 
-```
-┌─────────────────────────────────────────────────────────┐
-│  VoxNote - Voice Notes                                  │
-├─────────────────────────────────────────────────────────┤
-│  ┌─────────────────────────────────────────────────┐   │
-│  │  🔴 REC 00:03:42                    [⏹ Stop]    │   │
-│  │                                                 │   │
-│  │  "Today we discussed the new Kubernetes         │   │
-│  │   deployment strategy. The team agreed to       │   │
-│  │   implement blue-green deployments for          │   │
-│  │   production environments..."                   │   │
-│  │                                                 │   │
-│  │  Tags: #kubernetes #deployment #meeting         │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  Recent Notes                                           │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │ 📝 Sprint Planning - Aug 9    #meeting #scrum   │   │
-│  │ 📝 API Design Review - Aug 8  #api #design      │   │
-│  │ 📝 Bug Triage - Aug 7         #bugs #urgent     │   │
-│  └─────────────────────────────────────────────────┘   │
-│                                                         │
-│  Search: [________________________] 🔍                 │
-└─────────────────────────────────────────────────────────┘
-```
+<img src="https://img.shields.io/badge/JavaScript-F7DF1E?flat-square&logo=javascript&logoColor=black" />
+<img src="https://img.shields.io/badge/Web%20Speech%20API-4285F4?flat-square&logo=googlechrome&logoColor=white" />
+<img src="https://img.shields.io/badge/CSS3-1572B6?flat-square&logo=css3&logoColor=white" />
+<img src="https://img.shields.io/badge/GitHub%20Pages-222222?flat-square&logo=githubpages&logoColor=white" />
 
-## Quick Start
+</div>
 
-```bash
-# Install dependencies
-npm install
+---
 
-# Start development server
-npm run dev
+## What it does
 
-# Build for production
-npm run build
-```
+Tap the mic, talk, and the transcript builds live in front of you. When you stop, the note is saved with a timestamp, word count and optional tags — searchable instantly, exportable as Markdown or JSON.
 
-## API Usage
+| Feature | How it works |
+| :-- | :-- |
+| **Live transcription** | Web Speech API (`SpeechRecognition`), continuous mode with interim results shown in grey while you speak |
+| **Survives browser silence** | The API fires `end` after a pause; the app restarts it while recording is on, so a long note doesn't cut off |
+| **Auto recovery** | A denied microphone permission flips the app into type-only mode instead of breaking |
+| **Graceful degradation** | No Speech API (Firefox, older Safari)? The transcript becomes an editable area and everything else still works |
+| **Search** | Case-insensitive across title, body and tags |
+| **Tags** | Comma-separated, normalised to lowercase slugs |
+| **Export** | Markdown (newest first) or raw JSON — generated client-side, nothing leaves the page |
+| **Offline** | Notes live in `localStorage`; no backend to be down |
+
+## Keyboard
+
+| Keys | Action |
+| :-- | :-- |
+| `Ctrl`/`Cmd` + `Enter` | Save the current note |
+| Click the mic | Start / stop listening |
+
+## Run it
 
 ```bash
-# Record and transcribe
-curl -X POST http://localhost:8000/api/transcribe \
-  -F "audio=@recording.wav"
-
-# Search notes
-curl "http://localhost:8000/api/search?q=kubernetes&tag=meeting"
-
-# Get all notes
-curl http://localhost:8000/api/notes
-
-# Export note as markdown
-curl http://localhost:8000/api/notes/123/export?format=markdown
+python -m http.server 8000     # or: npx serve .
+# open http://localhost:8000
 ```
 
-## Architecture
+Microphone access requires a secure origin — `localhost` counts, `file://` does not.
+
+## Tests
+
+```bash
+npm test          # node --test, 14 tests
+```
+
+The pure logic lives in `notes-core.js` (formatting, titles, search, word counts, Markdown export) precisely so it can be tested without a DOM. `app.js` only wires that logic to elements.
 
 ```
 VoxNote/
-├── src/
-│   ├── components/
-│   │   ├── Recorder.jsx          # Audio recording
-│   │   ├── Transcription.jsx     # Live transcription
-│   │   ├── NoteList.jsx          # Note list view
-│   │   ├── NoteEditor.jsx        # Note editing
-│   │   ├── SearchBar.jsx         # Search functionality
-│   │   └── TagManager.jsx        # Tag management
-│   ├── hooks/
-│   │   ├── useRecorder.js        # Audio recording logic
-│   │   ├── useTranscription.js   # Speech-to-text
-│   │   └── useNotes.js           # Note CRUD operations
-│   ├── utils/
-│   │   ├── audio.js              # Audio processing
-│   │   ├── transcription.js      # Transcription API
-│   │   └── storage.js            # Local storage
-│   └── styles/
-│       └── globals.css           # TailwindCSS styles
-├── api/
-│   ├── main.py                   # FastAPI server
-│   ├── transcription.py          # Whisper integration
-│   ├── search.py                 # Full-text search
-│   └── models.py                 # Data models
-└── .github/workflows/            # CI/CD pipeline
+├── index.html      # markup
+├── style.css       # glass UI, recorder, library
+├── app.js          # speech recognition, rendering, storage, export
+├── notes-core.js   # pure helpers (tested)
+├── tests/          # node:test suite
+└── .github/workflows/ci.yml
 ```
 
-## Tech Stack
+## Browser support
 
-- **Frontend**: React 18, Web Audio API, TailwindCSS
-- **Backend**: Python, FastAPI, OpenAI Whisper
-- **Database**: SQLite (dev), PostgreSQL (prod)
-- **Search**: SQLite FTS5 (full-text search)
-- **CI/CD**: GitHub Actions
+Chrome, Edge and Safari 14.1+ ship `SpeechRecognition`. Firefox does not — VoxNote detects that at load and switches to typing mode automatically.
 
-## Contributing
+## Stack
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing`)
-3. Add tests for new features
-4. Ensure all tests pass (`npm test`)
-5. Submit a pull request
+Vanilla JavaScript (ES modules) · Web Speech API · CSS custom properties · `node:test` · GitHub Actions · GitHub Pages
 
-## License
+---
 
-MIT License - see [LICENSE](LICENSE) for details.
+<div align="center">
+
+**Ankita Salaria** · [@Ankitavasudev](https://github.com/Ankitavasudev)
+
+</div>

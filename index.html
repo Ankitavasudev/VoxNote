@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoxNote — voice notes in the browser</title>
+  <meta name="description" content="Capture notes by speaking. Speech recognition, search, tags and Markdown export. Runs entirely in your browser." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot" aria-hidden="true"></span>
+      <div>
+        <h1>VoxNote</h1>
+        <p>Speak. It writes.</p>
+      </div>
+    </div>
+    <div class="status" id="status" data-state="idle">
+      <span class="status-dot" aria-hidden="true"></span>
+      <span id="statusText">Idle</span>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="recorder" aria-label="Recorder">
+      <button id="mic" class="mic" aria-label="Start recording">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Z"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="mic-ring" aria-hidden="true"></span>
+      </button>
+
+      <p class="timer" id="timer">0:00</p>
+      <p class="hint" id="hint">Tap the mic and start talking</p>
+
+      <div class="transcript" id="transcript" aria-live="polite" role="log">
+        <span class="placeholder" id="placeholder">Your words appear here…</span>
+      </div>
+
+      <div class="save-row">
+        <input id="title" type="text" placeholder="Note title (optional)" aria-label="Note title" />
+        <input id="tags" type="text" placeholder="tags, comma separated" aria-label="Tags" />
+        <button id="save" class="primary" disabled>Save note</button>
+      </div>
+    </section>
+
+    <section class="library" aria-label="Saved notes">
+      <div class="library-head">
+        <h2>Library <span class="count" id="count">0</span></h2>
+        <input id="search" type="search" placeholder="Search notes…" aria-label="Search notes" />
+      </div>
+      <ul class="notes" id="notes"></ul>
+      <p class="empty" id="empty">No notes yet. Record one above, or type directly into the transcript.</p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="stats" id="stats">0 notes · 0 words · 0 min</div>
+    <div class="actions">
+      <button id="exportMd" class="ghost">Export Markdown</button>
+      <button id="exportJson" class="ghost">Export JSON</button>
+      <button id="clearAll" class="ghost danger">Clear all</button>
+    </div>
+  </footer>
+
+  <div class="toast" id="toast" hidden></div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

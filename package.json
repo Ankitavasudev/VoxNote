@@ -1,0 +1,12 @@
+{
+  "name": "voxnote",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Voice notes in the browser - speech recognition, search, tags and Markdown export",
+  "scripts": {
+    "test": "node --test",
+    "serve": "python -m http.server 8000"
+  },
+  "license": "MIT"
+}
