@@ -83,17 +83,25 @@ function setTranscript(text, interim = "") {
     span.textContent = ` ${interim}`;
     transcript.append(span);
   }
-  if (!text && !interim && supported) {
+  if (!text && !interim && !transcript.isContentEditable) {
     const span = document.createElement("span");
     span.className = "placeholder";
     span.textContent = "Your words appear here…";
     transcript.append(span);
   }
-  saveBtn.disabled = transcript.innerText.trim().length === 0;
+  // Derive this from the arguments, not from innerText: the placeholder is a
+  // child of the transcript and would otherwise look like a saved note.
+  saveBtn.disabled = !(text.trim() || interim.trim());
 }
 
 function currentText() {
   return transcript.innerText.replace(/\s+\n/g, "\n").trim();
+}
+
+// What a save would actually store. In type-only mode that is whatever the
+// user typed; while recording it is the finalized speech, never the placeholder.
+function noteText() {
+  return transcript.isContentEditable ? currentText() : finalText.trim();
 }
 
 function startRecognition() {
@@ -120,7 +128,7 @@ function startRecognition() {
     if (event.error === "no-speech") return;
     if (event.error === "not-allowed") {
       stopRecording();
-      setStatus("error", "Microphone blocked");
+      enableTypeOnlyMode("Microphone blocked — type your note instead");
       toast("Microphone permission denied — you can still type notes");
       return;
     }
@@ -175,7 +183,7 @@ function stopRecording() {
       /* ignore */
     }
   }
-  saveBtn.disabled = currentText().length === 0;
+  saveBtn.disabled = finalText.trim().length === 0;
 }
 
 mic.addEventListener("click", () => {
@@ -186,7 +194,7 @@ mic.addEventListener("click", () => {
 /* --------------------------------------------------------------------- save */
 
 function saveNote() {
-  const text = currentText();
+  const text = noteText();
   if (!text) return;
   const tags = tagsInput.value
     .split(",")
@@ -331,16 +339,35 @@ $("clearAll").addEventListener("click", () => {
 
 /* --------------------------------------------------------------------- init */
 
-if (!supported) {
+// Switch the transcript into a plain editable box. Used both when the browser
+// has no Speech API and when the user denies the microphone, so the app keeps
+// working instead of leaving a dead record button on screen.
+function enableTypeOnlyMode(message) {
   transcript.contentEditable = "true";
   transcript.setAttribute("role", "textbox");
   transcript.setAttribute("aria-label", "Type your note");
-  hint.textContent = "Speech recognition is unavailable in this browser — type instead";
+  hint.textContent = message;
   setStatus("error", "Type-only mode");
   mic.disabled = true;
   mic.style.opacity = "0.35";
   mic.style.cursor = "not-allowed";
-  setTranscript("");
+  if (currentText()) {
+    saveBtn.disabled = false;
+  } else {
+    setTranscript("");
+  }
+}
+
+// contenteditable does not go through setTranscript, so the save button has to
+// follow the text directly in type-only mode.
+transcript.addEventListener("input", () => {
+  if (transcript.isContentEditable) {
+    saveBtn.disabled = currentText().length === 0;
+  }
+});
+
+if (!supported) {
+  enableTypeOnlyMode("Speech recognition is unavailable in this browser — type instead");
 } else {
   setTranscript("");
 }
