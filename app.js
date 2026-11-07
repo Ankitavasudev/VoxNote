@@ -37,6 +37,46 @@ let startedAt = 0;
 let finalText = "";
 let recognition = null;
 
+/* ------------------------------------------------------------------- sound */
+const Sound = (() => {
+  let ctx = null;
+  let muted = localStorage.getItem("voxnote-sound") === "0";
+  function ensure() {
+    if (!ctx) try { ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch { ctx = null; }
+    if (ctx && ctx.state === "suspended") ctx.resume();
+    return ctx;
+  }
+  function tone(freq, dur, type = "sine", gain = 0.07, slide = 0) {
+    if (muted) return;
+    const c = ensure(); if (!c) return;
+    const now = c.currentTime;
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, now);
+    if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), now + dur);
+    g.gain.setValueAtTime(0.0001, now);
+    g.gain.exponentialRampToValueAtTime(gain, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+    o.connect(g).connect(c.destination);
+    o.start(now); o.stop(now + dur + 0.02);
+  }
+  return {
+    start: () => { tone(660, 0.06, "sine", 0.08); setTimeout(() => tone(880, 0.08, "sine", 0.09), 70); },
+    stop: () => { tone(880, 0.06, "sine", 0.07); setTimeout(() => tone(550, 0.09, "sine", 0.07), 70); },
+    save: () => { tone(523, 0.08, "sine", 0.08); setTimeout(() => tone(659, 0.08, "sine", 0.08), 90); setTimeout(() => tone(784, 0.12, "sine", 0.09), 180); },
+    copy: () => tone(740, 0.04, "triangle", 0.06),
+    del: () => { tone(440, 0.07, "sine", 0.07); setTimeout(() => tone(330, 0.1, "sine", 0.07), 70); },
+    clear: () => tone(330, 0.16, "sawtooth", 0.07, -180),
+    export: () => { tone(659, 0.08, "sine", 0.08); setTimeout(() => tone(784, 0.12, "sine", 0.09), 90); },
+    toggleMute: () => {
+      muted = !muted;
+      localStorage.setItem("voxnote-sound", muted ? "0" : "1");
+      if (!muted) tone(880, 0.06, "sine", 0.08);
+      return muted;
+    },
+    isMuted: () => muted,
+  };
+})();
+
 /* ------------------------------------------------------------------ storage */
 
 function load() {
@@ -166,6 +206,7 @@ function startRecording() {
     timer.textContent = formatDuration(elapsed);
   }, 250);
   startRecognition();
+  Sound.start();
 }
 
 function stopRecording() {
@@ -184,6 +225,7 @@ function stopRecording() {
     }
   }
   saveBtn.disabled = finalText.trim().length === 0;
+  Sound.stop();
 }
 
 mic.addEventListener("click", () => {
@@ -216,6 +258,7 @@ function saveNote() {
   timer.textContent = "0:00";
   elapsed = 0;
   toast("Note saved");
+  Sound.save();
 }
 
 saveBtn.addEventListener("click", saveNote);
@@ -278,6 +321,7 @@ function render() {
     copyBtn.addEventListener("click", async () => {
       await navigator.clipboard.writeText(note.text);
       toast("Copied");
+      Sound.copy();
     });
 
     const deleteBtn = document.createElement("button");
@@ -289,6 +333,7 @@ function render() {
       persist();
       render();
       toast("Deleted");
+      Sound.del();
     });
 
     actions.append(copyBtn, deleteBtn);
@@ -321,11 +366,13 @@ function download(filename, content, type) {
 $("exportMd").addEventListener("click", () => {
   if (!notes.length) return toast("Nothing to export");
   download("voxnote-notes.md", toMarkdown(notes), "text/markdown");
+  Sound.export();
 });
 
 $("exportJson").addEventListener("click", () => {
   if (!notes.length) return toast("Nothing to export");
   download("voxnote-notes.json", JSON.stringify(notes, null, 2), "application/json");
+  Sound.export();
 });
 
 $("clearAll").addEventListener("click", () => {
@@ -335,6 +382,7 @@ $("clearAll").addEventListener("click", () => {
   persist();
   render();
   toast("All notes cleared");
+  Sound.clear();
 });
 
 /* --------------------------------------------------------------------- init */
@@ -373,3 +421,10 @@ if (!supported) {
 }
 
 render();
+
+$("muteBtn").addEventListener("click", () => {
+  const m = Sound.toggleMute();
+  $("muteBtn").textContent = m ? "Sound off" : "Sound";
+  toast(m ? "Sound off" : "Sound on");
+});
+$("muteBtn").textContent = Sound.isMuted() ? "Sound off" : "Sound";
